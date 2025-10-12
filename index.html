@@ -1,0 +1,1887 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>小红书</title>
+  <!-- Tailwind CSS v3 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#FF2442',
+            secondary: '#FFA6B5',
+            lightgray: '#F7F7F7',
+            darkgray: '#999999'
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif']
+          },
+          boxShadow: {
+            'card': '0 2px 8px rgba(0, 0, 0, 0.08)'
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .text-shadow {
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      }
+      .card-hover {
+        @apply transition-all duration-300 hover:shadow-md;
+      }
+      .btn-primary {
+        @apply bg-primary text-white px-4 py-2 rounded-full text-sm font-medium;
+      }
+      .btn-secondary {
+        @apply bg-white text-primary border border-primary px-4 py-2 rounded-full text-sm font-medium;
+      }
+      .input-field {
+        @apply w-full px-3 py-2 border border-gray-200 rounded-lg text-sm;
+      }
+      .tag {
+        @apply bg-lightgray text-darkgray px-2 py-1 rounded-full text-xs mr-1 mb-1 inline-block;
+      }
+      .scale-animation {
+        animation: scale 0.2s ease-in-out;
+      }
+      @keyframes scale {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.3); }
+        100% { transform: scale(1); }
+      }
+    }
+  </style>
+  
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica Neue, Arial, sans-serif;
+      background-color: #fafafa;
+      overflow-x: hidden;
+    }
+    
+    .waterfall-container {
+      display: flex;
+      padding: 0 4px;
+    }
+    
+    .waterfall-column {
+      flex: 1;
+      padding: 0 4px;
+    }
+    
+    .note-card {
+      background-color: white;
+      border-radius: 12px;
+      margin-bottom: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    
+    .note-image {
+      width: 100%;
+      display: block;
+    }
+    
+    .no-more {
+      text-align: center;
+      color: #999;
+      font-size: 14px;
+      padding: 20px 0;
+    }
+    
+    /* 编辑面板样式 */
+    .edit-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: none;
+      z-index: 1000;
+    }
+    
+    .edit-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: white;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    
+    .notes-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+      max-height: 200px;
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+    
+    .note-thumbnail {
+      width: 70px;
+      height: 70px;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+    
+    .note-thumbnail.selected {
+      border-color: #FF2442;
+    }
+    
+    .note-thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .note-thumbnail .index {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      background-color: rgba(0, 0, 0, 0.5);
+      color: white;
+      font-size: 10px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #333;
+      font-weight: 500;
+    }
+    
+    .edit-section {
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .edit-section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #333;
+    }
+    
+    .action-buttons {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+    
+    .interaction-counts {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .interaction-counts .count-input {
+      flex: 1;
+    }
+    
+    .tags-input {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .tag-item {
+      background-color: #f7f7f7;
+      border-radius: 16px;
+      padding: 4px 12px;
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+    }
+    
+    .tag-item .remove-tag {
+      margin-left: 8px;
+      cursor: pointer;
+      color: #999;
+    }
+    
+    .tag-input-field {
+      flex: 1;
+      min-width: 100px;
+    }
+    
+    .image-previews {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .image-preview {
+      aspect-ratio: 1/1;
+      border-radius: 8px;
+      overflow: hidden;
+      background-color: #f7f7f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    
+    .image-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .image-preview .img-count {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      background-color: rgba(0, 0, 0, 0.5);
+      color: white;
+      font-size: 10px;
+      padding: 1px 4px;
+      border-radius: 4px;
+    }
+    
+    .image-preview .remove-img {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background-color: rgba(255, 255, 255, 0.8);
+      color: #FF2442;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    
+    .image-preview:hover .remove-img {
+      opacity: 1;
+    }
+    
+    .upload-btn {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      text-align: center;
+      background-color: #f7f7f7;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+      transition: background-color 0.2s;
+    }
+    
+    .upload-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      background-color: #eee;
+    }
+    
+    .upload-info {
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    
+    input[type="file"] {
+      display: none;
+    }
+    
+    .order-buttons {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .edit-layout {
+      display: flex;
+      gap: 16px;
+    }
+    
+    .edit-left {
+      flex: 0 0 160px;
+    }
+    
+    .edit-right {
+      flex: 1;
+      overflow-y: auto;
+      max-height: calc(100vh - 100px);
+    }
+    
+    textarea.input-field {
+      min-height: 120px;
+      resize: vertical;
+    }
+    
+    /* 详情页样式 */
+    .detail-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      display: none;
+      z-index: 2000;
+      overflow: hidden;
+    }
+    
+    .detail-content {
+      width: 100%;
+      height: 100%;
+      background-color: white;
+      display: flex;
+      flex-direction: column;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    .detail-image-container {
+      flex: 0 0 60%;
+      position: relative;
+      overflow: hidden;
+      background-color: #000;
+    }
+    
+    .image-slider {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    
+    .image-track {
+      height: 100%;
+      display: flex;
+      transition: transform 0.3s ease-out;
+    }
+    
+    .image-track img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    
+    .image-counter {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      background-color: rgba(0, 0, 0, 0.5);
+      color: white;
+      font-size: 14px;
+      padding: 4px 8px;
+      border-radius: 12px;
+      z-index: 10;
+    }
+    
+    .image-indicators {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      position: absolute;
+      bottom: 16px;
+      left: 0;
+      right: 0;
+      z-index: 10;
+    }
+    
+    .indicator-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.5);
+      transition: background-color 0.3s;
+    }
+    
+    .indicator-dot.active {
+      background-color: #FF2442;
+    }
+    
+    .detail-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    
+    .detail-text {
+      line-height: 1.6;
+      white-space: pre-line;
+      margin-bottom: 16px;
+    }
+    
+    .like-btn.active i {
+      color: #FF2442;
+    }
+    
+    .collect-btn.active i {
+      color: #FFD700;
+    }
+    
+    .search-box {
+      background-color: #f7f7f7;
+      border-radius: 8px;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      flex: 1;
+      max-width: 300px;
+    }
+    
+    .search-box input {
+      background: transparent;
+      border: none;
+      outline: none;
+      font-size: 14px;
+      margin-left: 6px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <!-- 顶部导航栏 -->
+  <header class="bg-white shadow-sm sticky top-0 z-10 px-4 py-3">
+    <div class="flex items-center justify-center">
+      <div class="search-box">
+        <i class="fa fa-search text-gray-400"></i>
+        <input type="text" placeholder="搜索笔记、话题" id="search-input">
+      </div>
+    </div>
+  </header>
+
+  <!-- 瀑布流内容区 -->
+  <main class="waterfall-container">
+    <div class="waterfall-column" id="column-1"></div>
+    <div class="waterfall-column" id="column-2"></div>
+  </main>
+
+  <!-- 底部无更多内容提示 -->
+  <div class="no-more" id="no-more">暂无更多内容</div>
+
+  <!-- 详情页模态框 -->
+  <div class="detail-modal" id="detail-modal">
+    <div class="detail-content">
+      <!-- 顶部导航 -->
+      <div class="detail-header flex justify-between items-center p-4 bg-white border-b">
+        <button class="close-detail flex items-center text-gray-700">
+          <i class="fa fa-angle-left mr-2"></i> 返回
+        </button>
+        <div class="flex items-center">
+          <img src="" alt="用户头像" class="w-6 h-6 rounded-full mr-2" id="detail-avatar">
+          <span class="text-sm font-medium" id="detail-nickname"></span>
+        </div>
+        <button class="text-gray-700">
+          <i class="fa fa-ellipsis-h"></i>
+        </button>
+      </div>
+      
+      <!-- 图片轮播区域 -->
+      <div class="detail-image-container relative">
+        <div class="image-slider overflow-hidden">
+          <div class="image-track flex transition-transform duration-300" id="image-track">
+            <!-- 图片将通过JavaScript动态添加 -->
+          </div>
+        </div>
+        
+        <!-- 图片计数器/指示器 -->
+        <div class="image-counter" id="image-counter">1/1</div>
+        <div class="image-indicators absolute bottom-4 left-0 right-0 flex justify-center gap-2" id="image-indicators">
+          <!-- 指示器将通过JavaScript动态添加 -->
+        </div>
+      </div>
+      
+      <!-- 内容区域 -->
+      <div class="detail-body p-4 bg-white">
+        <h2 class="text-lg font-medium mb-3" id="detail-title"></h2>
+        <div class="text-sm text-gray-700 mb-4 detail-text" id="detail-text"></div>
+        <div class="flex flex-wrap gap-1 mb-4" id="detail-tags">
+          <!-- 标签将通过JavaScript动态添加 -->
+        </div>
+        
+        <!-- 互动区域 -->
+        <div class="detail-interactions flex justify-between items-center pt-3 border-t">
+          <div class="flex items-center">
+            <button class="like-btn flex items-center mr-6" id="detail-like">
+              <i class="fa fa-heart-o text-xl mr-1"></i>
+              <span class="text-sm" id="detail-likes-count"></span>
+            </button>
+            <button class="comment-btn flex items-center mr-6">
+              <i class="fa fa-comment-o text-xl mr-1"></i>
+              <span class="text-sm" id="detail-comments-count"></span>
+            </button>
+            <button class="collect-btn flex items-center" id="detail-collect">
+              <i class="fa fa-star-o text-xl mr-1"></i>
+              <span class="text-sm" id="detail-collections-count"></span>
+            </button>
+          </div>
+          <button class="share-btn">
+            <i class="fa fa-share-alt text-xl"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 编辑面板 -->
+  <div class="edit-panel" id="edit-panel">
+    <div class="edit-content">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-bold">笔记编辑</h2>
+        <button id="close-panel" class="text-darkgray">
+          <i class="fa fa-times text-xl"></i>
+        </button>
+      </div>
+      
+      <div class="edit-layout">
+        <div class="edit-left">
+          <div class="form-group">
+            <label>笔记列表</label>
+            <div class="notes-list" id="notes-list"></div>
+          </div>
+        </div>
+        
+        <div class="edit-right" id="note-form">
+          <!-- 基本信息 -->
+          <div class="edit-section">
+            <h3 class="edit-section-title">基本信息</h3>
+            <div class="form-group">
+              <label for="title-input">标题</label>
+              <input type="text" id="title-input" class="input-field" placeholder="请输入标题">
+            </div>
+            
+            <div class="form-group">
+              <label for="nickname-input">作者昵称</label>
+              <input type="text" id="nickname-input" class="input-field" placeholder="请输入作者昵称">
+            </div>
+            
+            <div class="form-group">
+              <label>话题标签</label>
+              <div class="tags-input" id="tags-input">
+                <input type="text" id="tag-input" class="input-field tag-input-field" placeholder="添加话题标签">
+              </div>
+            </div>
+          </div>
+          
+          <!-- 图片管理 -->
+          <div class="edit-section">
+            <h3 class="edit-section-title">图片管理</h3>
+            <div class="form-group">
+              <label>图片预览</label>
+              <div class="image-previews" id="image-previews">
+                <!-- 图片预览将通过JavaScript动态添加 -->
+              </div>
+              
+              <div class="upload-info" id="upload-info">0/10 张图片</div>
+              
+              <label class="upload-btn" id="upload-btn">
+                <input type="file" id="image-upload" accept="image/*" multiple>
+                <i class="fa fa-upload mr-1"></i> 上传图片（可多选）
+              </label>
+              <div class="upload-info text-red-500 text-xs hidden" id="upload-limit-warning">最多支持10张图片</div>
+            </div>
+          </div>
+          
+          <!-- 正文内容 -->
+          <div class="edit-section">
+            <h3 class="edit-section-title">正文内容</h3>
+            <div class="form-group">
+              <textarea id="content-input" class="input-field" placeholder="请输入笔记正文内容..."></textarea>
+            </div>
+          </div>
+          
+          <!-- 互动数据 -->
+          <div class="edit-section">
+            <h3 class="edit-section-title">互动数据</h3>
+            <div class="interaction-counts">
+              <div class="count-input">
+                <label for="likes-input">点赞数</label>
+                <input type="number" id="likes-input" class="input-field" placeholder="点赞数">
+              </div>
+              <div class="count-input">
+                <label for="comments-input">评论数</label>
+                <input type="number" id="comments-input" class="input-field" placeholder="评论数">
+              </div>
+              <div class="count-input">
+                <label for="collections-input">收藏数</label>
+                <input type="number" id="collections-input" class="input-field" placeholder="收藏数">
+              </div>
+            </div>
+          </div>
+          
+          <!-- 顺序调整 -->
+          <div class="edit-section">
+            <h3 class="edit-section-title">顺序调整</h3>
+            <div class="order-buttons">
+              <button id="move-up" class="btn-secondary flex-1">上移</button>
+              <button id="move-down" class="btn-secondary flex-1">下移</button>
+            </div>
+          </div>
+          
+          <div class="action-buttons">
+            <button id="save-edit" class="btn-primary">保存修改</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 初始化数据 - 广州/珠三角主题，包含1-10张图片的示例
+    const initialNotesData = [
+      {
+        id: 1,
+        avatar: 'https://picsum.photos/seed/user1/50/50',
+        nickname: '广州探店君',
+        imgUrls: [
+          'https://picsum.photos/seed/guangzhoutea1/600/800',
+          'https://picsum.photos/seed/guangzhoutea2/600/800',
+          'https://picsum.photos/seed/guangzhoutea3/600/800'
+        ],
+        title: '广州老字号早茶体验，虾饺皇绝了',
+        content: '周末去了这家开了20多年的早茶店，果然名不虚传！\n\n虾饺皇皮薄馅大，虾肉Q弹多汁，每一口都是满足感。\n\n艇仔粥料超足，喝一口暖到心里。\n\n推荐指数：⭐⭐⭐⭐⭐\n地址：越秀区北京路xxx号',
+        likes: 328,
+        comments: 56,
+        collections: 129,
+        tags: ['#广州美食', '#早茶', '#北京路探店']
+      },
+      {
+        id: 2,
+        avatar: 'https://picsum.photos/seed/user2/50/50',
+        nickname: '深圳湾散步',
+        imgUrls: [
+          'https://picsum.photos/seed/shenzhenbay1/600/800'
+        ],
+        title: '深圳湾日落太美了，治愈一切不开心',
+        content: '傍晚来深圳湾散步，刚好赶上绝美日落。\n\n夕阳把天空染成了橘红色，海风轻轻吹过，整个人都放松下来了。\n\n很多人在这里跑步、骑行，氛围特别好。\n\n建议傍晚5-6点过来，可以看到完整的日落过程。',
+        likes: 456,
+        comments: 78,
+        collections: 210,
+        tags: ['#深圳湾', '#日落', '#深圳游玩']
+      },
+      {
+        id: 3,
+        avatar: 'https://picsum.photos/seed/user3/50/50',
+        nickname: '佛山吃货',
+        imgUrls: [
+          'https://picsum.photos/seed/foshanfood1/600/800',
+          'https://picsum.photos/seed/foshanfood2/600/800',
+          'https://picsum.photos/seed/foshanfood3/600/800',
+          'https://picsum.photos/seed/foshanfood4/600/800',
+          'https://picsum.photos/seed/foshanfood5/600/800'
+        ],
+        title: '佛山岭南天地美食合集，5家店不踩雷',
+        content: '整理了佛山岭南天地必吃的5家店，每一家都值得打卡！\n\n1. 双皮奶：奶香味特别浓郁，口感嫩滑\n2. 鱼皮：爽脆可口，秘制酱料超好吃\n3. 姜撞奶：冬天喝特别暖身\n4. 云吞面：竹升面劲道，云吞馅料足\n5. 芝麻糊：传统工艺，香甜不腻\n\n可以安排一整天慢慢吃！',
+        likes: 529,
+        comments: 87,
+        collections: 245,
+        tags: ['#佛山美食', '#岭南天地', '#吃货攻略']
+      },
+      {
+        id: 4,
+        avatar: 'https://picsum.photos/seed/user4/50/50',
+        nickname: '广州塔摄影',
+        imgUrls: [
+          'https://picsum.photos/seed/cantontower1/600/800',
+          'https://picsum.photos/seed/cantontower2/600/800',
+          'https://picsum.photos/seed/cantontower3/600/800',
+          'https://picsum.photos/seed/cantontower4/600/800',
+          'https://picsum.photos/seed/cantontower5/600/800',
+          'https://picsum.photos/seed/cantontower6/600/800',
+          'https://picsum.photos/seed/cantontower7/600/800'
+        ],
+        title: '广州塔7个最佳拍摄点，角度超全',
+        content: '整理了广州塔7个最佳拍摄点，不同角度展现小蛮腰的美！\n\n1. 花城广场：正面全景，适合白天拍摄\n2. 海心沙：可以拍到塔与珠江的合影\n3. 猎德大桥：远景拍摄，适合日落时分\n4. 广州塔地铁站：仰拍视角，很有冲击力\n5. 二沙岛：可以拍到塔与城市天际线\n6. 海珠湿地公园：自然景观与现代建筑结合\n7. 夜游珠江：灯光璀璨，夜景绝美\n\n每个角度都有不同的美感，摄影爱好者不要错过！',
+        likes: 643,
+        comments: 102,
+        collections: 356,
+        tags: ['#广州塔', '#摄影', '#广州景点']
+      },
+      {
+        id: 5,
+        avatar: 'https://picsum.photos/seed/user5/50/50',
+        nickname: '顺德美食',
+        imgUrls: [
+          'https://picsum.photos/seed/shunde1/600/800',
+          'https://picsum.photos/seed/shunde2/600/800',
+          'https://picsum.photos/seed/shunde3/600/800',
+          'https://picsum.photos/seed/shunde4/600/800',
+          'https://picsum.photos/seed/shunde5/600/800',
+          'https://picsum.photos/seed/shunde6/600/800',
+          'https://picsum.photos/seed/shunde7/600/800',
+          'https://picsum.photos/seed/shunde8/600/800',
+          'https://picsum.photos/seed/shunde9/600/800',
+          'https://picsum.photos/seed/shunde10/600/800'
+        ],
+        title: '顺德10道必吃美食，从早吃到晚',
+        content: '顺德美食甲天下，这10道必吃美食不能错过！\n\n1. 双皮奶：顺德招牌，奶香浓郁\n2. 姜撞奶：现点现做，口感滑嫩\n3. 鱼生：新鲜清甜，配料丰富\n4. 桑拿鸡：原汁原味，鸡肉嫩滑\n5. 均安蒸猪：肥而不腻，香气扑鼻\n6. 陈村粉：薄如纸，口感爽滑\n7. 伦教糕：清甜松软，传统糕点\n8. 鱼皮：爽脆可口，秘制酱料\n9. 炸牛奶：外酥里嫩，香甜可口\n10. 及第粥：料足味美，早餐首选\n\n每一样都让人回味无穷，建议空腹前往！',
+        likes: 876,
+        comments: 156,
+        collections: 542,
+        tags: ['#顺德美食', '#佛山美食', '#吃货攻略']
+      },
+      {
+        id: 6,
+        avatar: 'https://picsum.photos/seed/user6/50/50',
+        nickname: '东莞松山湖',
+        imgUrls: [
+          'https://picsum.photos/seed/dongguan1/600/800',
+          'https://picsum.photos/seed/dongguan2/600/800',
+          'https://picsum.photos/seed/dongguan3/600/800',
+          'https://picsum.photos/seed/dongguan4/600/800'
+        ],
+        title: '东莞松山湖骑行，4个绝美景点',
+        content: '周末去松山湖骑行，发现了4个绝美景点！\n\n1. 松湖花海：大片花海，拍照超美\n2. 滨湖木栈道：临水而建，风景宜人\n3. 中心公园：适合休息，绿化很好\n4. 阳光沙滩：人造沙滩，适合带娃玩\n\n租一辆自行车环湖一周，大概需要2-3小时。\n建议做好防晒，最好早上或傍晚去，避开正午的烈日。',
+        likes: 245,
+        comments: 41,
+        collections: 128,
+        tags: ['#东莞游玩', '#松山湖', '#骑行']
+      },
+      {
+        id: 7,
+        avatar: 'https://picsum.photos/seed/user7/50/50',
+        nickname: '珠海长隆',
+        imgUrls: [
+          'https://picsum.photos/seed/zhuhai1/600/800',
+          'https://picsum.photos/seed/zhuhai2/600/800',
+          'https://picsum.photos/seed/zhuhai3/600/800',
+          'https://picsum.photos/seed/zhuhai4/600/800',
+          'https://picsum.photos/seed/zhuhai5/600/800',
+          'https://picsum.photos/seed/zhuhai6/600/800'
+        ],
+        title: '珠海长隆6大必玩项目，超全攻略',
+        content: '整理了珠海长隆海洋王国必玩的6大项目，收藏好慢慢看！\n\n1. 鲸鲨馆：世界最大的海洋鱼类展览馆\n2. 鹦鹉过山车：刺激指数五星，胆小慎入\n3. 超级激流：水上项目，会湿身建议带雨衣\n4. 白鲸剧场：精彩表演，互动性强\n5. 5D城堡影院：沉浸式体验，效果震撼\n6. 烟花表演：晚上8点开始，不容错过\n\n建议早点去，避开人流高峰，玩得更尽兴！',
+        likes: 512,
+        comments: 98,
+        collections: 320,
+        tags: ['#珠海旅游', '#长隆', '#亲子游']
+      },
+      {
+        id: 8,
+        avatar: 'https://picsum.photos/seed/user8/50/50',
+        nickname: '惠州双月湾',
+        imgUrls: [
+          'https://picsum.photos/seed/huizhou1/600/800',
+          'https://picsum.photos/seed/huizhou2/600/800',
+          'https://picsum.photos/seed/huizhou3/600/800',
+          'https://picsum.photos/seed/huizhou4/600/800',
+          'https://picsum.photos/seed/huizhou5/600/800'
+        ],
+        title: '惠州双月湾5大必去景点',
+        content: '周末去了惠州双月湾，风景真的太美了！整理了5大必去景点：\n\n1. 双月湾观景台：俯瞰整个海湾，双月奇观\n2. 海龟湾：网红栈道，拍照很出片\n3. 小星山浮潜：水质清澈，适合浮潜\n4. 黑排角：黑色礁石，海浪拍打很壮观\n5. 港口镇：吃海鲜的好地方，性价比高\n\n住宿推荐港口镇，离观景台近，晚上还能吃海鲜。',
+        likes: 489,
+        comments: 87,
+        collections: 290,
+        tags: ['#惠州旅游', '#双月湾', '#海边度假']
+      },
+      {
+        id: 9,
+        avatar: 'https://picsum.photos/seed/user9/50/50',
+        nickname: '广州海珠区',
+        imgUrls: [
+          'https://picsum.photos/seed/guangzhouhaizhu1/600/800'
+        ],
+        title: '海珠湿地公园散步，城市中的绿洲',
+        content: '海珠湿地公园真的是广州的宝藏地方！\n\n里面很大，绿植茂盛，空气特别好。\n\n不同季节有不同的花开放，现在这个季节刚好有大片的波斯菊。\n\n走累了可以在湖边的亭子休息，看看湖中的鸭子和乌龟。\n\n门票20元，性价比很高，适合周末放松。',
+        likes: 176,
+        comments: 29,
+        collections: 84,
+        tags: ['#广州公园', '#海珠区', '#周末去哪儿']
+      },
+      {
+        id: 10,
+        avatar: 'https://picsum.photos/seed/user10/50/50',
+        nickname: '番禺长隆',
+        imgUrls: [
+          'https://picsum.photos/seed/panyu1/600/800',
+          'https://picsum.photos/seed/panyu2/600/800',
+          'https://picsum.photos/seed/panyu3/600/800',
+          'https://picsum.photos/seed/panyu4/600/800',
+          'https://picsum.photos/seed/panyu5/600/800',
+          'https://picsum.photos/seed/panyu6/600/800',
+          'https://picsum.photos/seed/panyu7/600/800',
+          'https://picsum.photos/seed/panyu8/600/800'
+        ],
+        title: '番禺长隆8大必看动物，亲子游攻略',
+        content: '带孩子去了番禺长隆野生动物世界，整理了8大必看动物：\n\n1. 熊猫三胞胎：全球唯一存活的熊猫三胞胎\n2. 考拉：澳洲国宝，萌萌的很可爱\n3. 白虎：长隆的镇园之宝，数量居世界前列\n4. 金丝猴：珍稀动物，动作敏捷\n5. 长颈鹿：可以近距离喂食\n6. 大象：聪明可爱，会互动\n7. 河马：体型庞大，张嘴瞬间很震撼\n8. 火烈鸟：粉红色一片，拍照超美\n\n园区很大，建议穿舒服的鞋子，一天下来步数肯定过万。',
+        likes: 324,
+        comments: 65,
+        collections: 187,
+        tags: ['#番禺游玩', '#长隆', '#亲子游']
+      },
+      {
+        id: 11,
+        avatar: 'https://picsum.photos/seed/user11/50/50',
+        nickname: '肇庆七星岩',
+        imgUrls: [
+          'https://picsum.photos/seed/zhaoqing1/600/800',
+          'https://picsum.photos/seed/zhaoqing2/600/800',
+          'https://picsum.photos/seed/zhaoqing3/600/800'
+        ],
+        title: '肇庆七星岩一日游，山水如画',
+        content: '肇庆七星岩真的太美了，山清水秀，像一幅水墨画。\n\n可以选择坐船游览，从水上看山景别有一番风味。\n\n爬上天柱岩可以俯瞰整个景区，风景绝佳。\n\n景区很大，建议预留一整天的时间慢慢逛。\n\n门票70元，性价比很高，值得一去。',
+        likes: 289,
+        comments: 54,
+        collections: 167,
+        tags: ['#肇庆旅游', '#七星岩', '#自然风光']
+      },
+      {
+        id: 12,
+        avatar: 'https://picsum.photos/seed/user12/50/50',
+        nickname: '广州荔湾区',
+        imgUrls: [
+          'https://picsum.photos/seed/guangzhoulw1/600/800',
+          'https://picsum.photos/seed/guangzhoulw2/600/800',
+          'https://picsum.photos/seed/guangzhoulw3/600/800',
+          'https://picsum.photos/seed/guangzhoulw4/600/800'
+        ],
+        title: '荔湾4大景点，感受老广州风情',
+        content: '荔湾区是广州历史最悠久的区域之一，这4个景点一定要去：\n\n1. 荔枝湾涌：可以坐游船，欣赏两岸风光\n2. 永庆坊：改造后的老街区，很多文创小店\n3. 陈家祠：岭南建筑艺术的代表作\n4. 上下九步行街：感受广州传统商业氛围\n\n晚上的灯光也很漂亮，建议傍晚时分去，可以看到白天和夜晚两种景色。',
+        likes: 215,
+        comments: 38,
+        collections: 103,
+        tags: ['#广州游玩', '#荔湾区', '#老广州']
+      },
+      {
+        id: 13,
+        avatar: 'https://picsum.photos/seed/user13/50/50',
+        nickname: '江门开平',
+        imgUrls: [
+          'https://picsum.photos/seed/jiangmen1/600/800',
+          'https://picsum.photos/seed/jiangmen2/600/800',
+          'https://picsum.photos/seed/jiangmen3/600/800',
+          'https://picsum.photos/seed/jiangmen4/600/800',
+          'https://picsum.photos/seed/jiangmen5/600/800',
+          'https://picsum.photos/seed/jiangmen6/600/800'
+        ],
+        title: '开平碉楼6大必看景点，《让子弹飞》取景地',
+        content: '去了开平碉楼，这些百年历史的建筑真的很有特色，整理了6大必看景点：\n\n1. 立园：中西合璧的园林式建筑\n2. 自力村碉楼群：《让子弹飞》取景地\n3. 马降龙碉楼群：风景优美，生态环境好\n4. 锦江里碉楼群：有三座著名的碉楼\n5. 赤坎古镇：岭南特色古镇，适合拍照\n6. 南楼：具有历史意义的碉楼\n\n每个碉楼都有自己的故事，建议租讲解器或者跟团，了解更多历史。',
+        likes: 198,
+        comments: 32,
+        collections: 95,
+        tags: ['#江门旅游', '#开平碉楼', '#历史建筑']
+      },
+      {
+        id: 14,
+        avatar: 'https://picsum.photos/seed/user14/50/50',
+        nickname: '清远漂流',
+        imgUrls: [
+          'https://picsum.photos/seed/qingyuan1/600/800'
+        ],
+        title: '清远黄腾峡漂流，刺激到尖叫',
+        content: '夏天就该去漂流！清远黄腾峡漂流真的太刺激了。\n\n全程有很多落差，尖叫声就没停过，特别解压。\n\n建议穿速干衣，多带一套衣服换，肯定会湿透的。\n\n景区有储物柜可以存放物品，很方便。\n\n漂流结束后可以去附近泡个温泉，缓解一下疲劳。',
+        likes: 345,
+        comments: 76,
+        collections: 189,
+        tags: ['#清远旅游', '#漂流', '#夏日玩乐']
+      },
+      {
+        id: 15,
+        avatar: 'https://picsum.photos/seed/user15/50/50',
+        nickname: '潮汕美食',
+        imgUrls: [
+          'https://picsum.photos/seed/chaoshan1/600/800',
+          'https://picsum.photos/seed/chaoshan2/600/800',
+          'https://picsum.photos/seed/chaoshan3/600/800',
+          'https://picsum.photos/seed/chaoshan4/600/800',
+          'https://picsum.photos/seed/chaoshan5/600/800',
+          'https://picsum.photos/seed/chaoshan6/600/800',
+          'https://picsum.photos/seed/chaoshan7/600/800',
+          'https://picsum.photos/seed/chaoshan8/600/800',
+          'https://picsum.photos/seed/chaoshan9/600/800'
+        ],
+        title: '潮汕9大必吃美食，三天吃不够',
+        content: '潮汕真的是美食天堂，这9大必吃美食不能错过：\n\n1. 牛肉火锅：新鲜现切，不同部位口感不同\n2. 粿条汤：汤底鲜甜，配料丰富\n3. 潮汕肠粉：皮薄馅足，酱料独特\n4. 蚝烙：外酥里嫩，蘸鱼露超好吃\n5. 普宁豆干：外脆里嫩，蘸韭菜盐水\n6. 糖葱薄饼：传统小吃，香甜可口\n7. 鸭母捻：类似汤圆，馅料多样\n8. 红桃粿：节庆食品，咸香可口\n9. 甘草水果：酸甜可口，解腻神器\n\n物价亲民，味道正宗，吃货必去！',
+        likes: 621,
+        comments: 128,
+        collections: 412,
+        tags: ['#潮汕美食', '#汕头旅游', '#美食攻略']
+      },
+      {
+        id: 16,
+        avatar: 'https://picsum.photos/seed/user16/50/50',
+        nickname: '广州白云山',
+        imgUrls: [
+          'https://picsum.photos/seed/guangzhoubaiyun1/600/800',
+          'https://picsum.photos/seed/guangzhoubaiyun2/600/800',
+          'https://picsum.photos/seed/guangzhoubaiyun3/600/800'
+        ],
+        title: '白云山3条游玩路线，适合不同人群',
+        content: '整理了白云山3条不同的游玩路线，适合不同需求的人：\n\n1. 轻松休闲线：南门→云台花园→鸣春谷→山顶公园，全程较平缓\n2. 登山挑战线：西门→摩星岭→荡胸亭→明珠楼，坡度较大\n3. 观景摄影线：柯子岭门→白云松涛→山顶公园→黄河石广场，风景最佳\n\n门票5元，性价比超高，是广州人周末常去的地方。',
+        likes: 187,
+        comments: 35,
+        collections: 94,
+        tags: ['#广州景点', '#白云山', '#爬山']
+      },
+      {
+        id: 17,
+        avatar: 'https://picsum.photos/seed/user17/50/50',
+        nickname: '珠海情侣路',
+        imgUrls: [
+          'https://picsum.photos/seed/zhuhaiql1/600/800',
+          'https://picsum.photos/seed/zhuhaiql2/600/800',
+          'https://picsum.photos/seed/zhuhaiql3/600/800',
+          'https://picsum.photos/seed/zhuhaiql4/600/800'
+        ],
+        title: '珠海情侣路4大景点，浪漫海岸线',
+        content: '珠海情侣路真的太美了，沿着海岸线修建，这4个景点不能错过：\n\n1. 珠海渔女：城市地标，必打卡景点\n2. 海滨公园：绿化很好，适合野餐\n3. 野狸岛：可以骑行环岛，夜景很美\n4. 爱情邮局：可以寄明信片，很有纪念意义\n\n租一辆自行车慢慢骑，吹着海风，看着大海，太舒服了。\n最好是傍晚时分去，夕阳西下的时候特别美。',
+        likes: 265,
+        comments: 49,
+        collections: 143,
+        tags: ['#珠海景点', '#情侣路', '#骑行']
+      },
+      {
+        id: 18,
+        avatar: 'https://picsum.photos/seed/user18/50/50',
+        nickname: '增城摘荔枝',
+        imgUrls: [
+          'https://picsum.photos/seed/zengcheng1/600/800',
+          'https://picsum.photos/seed/zengcheng2/600/800'
+        ],
+        title: '增城摘荔枝，2个优质果园推荐',
+        content: '又到了荔枝成熟的季节，推荐增城2个优质果园：\n\n1. 正果镇荔枝园：品种多，有桂味、糯米糍等\n2. 朱村荔枝园：交通便利，离市区较近\n\n现摘现吃，新鲜多汁，比超市买的好吃太多了。\n除了摘荔枝，还可以在果园里吃农家菜，荔枝柴烧鸡特别香。\n门票一般是50元左右，可以随便吃，带走按斤称。',
+        likes: 213,
+        comments: 37,
+        collections: 108,
+        tags: ['#增城游玩', '#摘荔枝', '#农家乐']
+      },
+      {
+        id: 19,
+        avatar: 'https://picsum.photos/seed/user19/50/50',
+        nickname: '澳门一日游',
+        imgUrls: [
+          'https://picsum.photos/seed/macau1/600/800',
+          'https://picsum.photos/seed/macau2/600/800',
+          'https://picsum.photos/seed/macau3/600/800',
+          'https://picsum.photos/seed/macau4/600/800',
+          'https://picsum.photos/seed/macau5/600/800'
+        ],
+        title: '澳门5大必去景点，一日游攻略',
+        content: '从珠海拱北过关去澳门，一天玩遍5大景点：\n\n1. 大三巴：澳门标志性建筑，必打卡\n2. 议事亭前地：彩色建筑群，适合拍照\n3. 官也街：美食集中地，水蟹粥必吃\n4. 威尼斯人：人造运河，购物娱乐一体\n5. 黑沙海滩：黑色沙滩，看日落很美\n\n澳门很小，景点集中，一天足够玩遍。\n记得换点澳门币，虽然很多地方也收人民币，但可能不划算。',
+        likes: 543,
+        comments: 98,
+        collections: 321,
+        tags: ['#澳门旅游', '#澳门美食', '#一日游']
+      },
+      {
+        id: 20,
+        avatar: 'https://picsum.photos/seed/user20/50/50',
+        nickname: '中山游玩',
+        imgUrls: [
+          'https://picsum.photos/seed/zhongshan1/600/800',
+          'https://picsum.photos/seed/zhongshan2/600/800',
+          'https://picsum.photos/seed/zhongshan3/600/800',
+          'https://picsum.photos/seed/zhongshan4/600/800',
+          'https://picsum.photos/seed/zhongshan5/600/800',
+          'https://picsum.photos/seed/zhongshan6/600/800',
+          'https://picsum.photos/seed/zhongshan7/600/800'
+        ],
+        title: '中山7大必去景点，美食与历史兼顾',
+        content: '中山是一座既有美食又有历史的城市，7大必去景点推荐：\n\n1. 孙中山故居：了解伟人历史\n2. 岐江公园：夜景很美，适合散步\n3. 逢源商业街：感受老中山风情\n4. 孙文西路步行街：骑楼建筑，购物休闲\n5. 中山温泉：泡温泉放松身心\n6. 泉林山庄：适合亲子游玩\n7. 詹园：岭南园林，风景优美\n\n来中山一定要试试当地的乳鸽，皮脆肉嫩，非常美味！',
+        likes: 321,
+        comments: 56,
+        collections: 178,
+        tags: ['#中山旅游', '#中山美食', '#历史文化']
+      }
+    ];
+
+    // 当前选中的笔记索引
+    let selectedNoteIndex = -1;
+    // 本地存储的笔记数据
+    let localNotes = [];
+    
+    // 从localStorage加载数据或使用初始数据
+    function loadNotesData() {
+      const savedNotes = localStorage.getItem('xhsNotes');
+      if (savedNotes) {
+        try {
+          localNotes = JSON.parse(savedNotes);
+          return;
+        } catch (e) {
+          console.error('Failed to parse saved notes', e);
+        }
+      }
+      // 如果没有保存的数据或解析失败，使用初始数据
+      localNotes = JSON.parse(JSON.stringify(initialNotesData));
+    }
+    
+    // 保存数据到localStorage
+    function saveNotesData() {
+      localStorage.setItem('xhsNotes', JSON.stringify(localNotes));
+    }
+
+    // DOM元素
+    const column1 = document.getElementById('column-1');
+    const column2 = document.getElementById('column-2');
+    const noMore = document.getElementById('no-more');
+    const searchInput = document.getElementById('search-input');
+    const editPanel = document.getElementById('edit-panel');
+    const closePanel = document.getElementById('close-panel');
+    const notesList = document.getElementById('notes-list');
+    const noteForm = document.getElementById('note-form');
+    const titleInput = document.getElementById('title-input');
+    const nicknameInput = document.getElementById('nickname-input');
+    const likesInput = document.getElementById('likes-input');
+    const commentsInput = document.getElementById('comments-input');
+    const collectionsInput = document.getElementById('collections-input');
+    const tagsInput = document.getElementById('tags-input');
+    const tagInput = document.getElementById('tag-input');
+    const moveUpBtn = document.getElementById('move-up');
+    const moveDownBtn = document.getElementById('move-down');
+    const saveEditBtn = document.getElementById('save-edit');
+    const imagePreviews = document.getElementById('image-previews');
+    const imageUpload = document.getElementById('image-upload');
+    const uploadBtn = document.getElementById('upload-btn');
+    const uploadInfo = document.getElementById('upload-info');
+    const uploadLimitWarning = document.getElementById('upload-limit-warning');
+    const contentInput = document.getElementById('content-input');
+    
+    // 详情页DOM元素
+    const detailModal = document.getElementById('detail-modal');
+    const closeDetail = document.querySelector('.close-detail');
+    const detailAvatar = document.getElementById('detail-avatar');
+    const detailNickname = document.getElementById('detail-nickname');
+    const imageTrack = document.getElementById('image-track');
+    const imageIndicators = document.getElementById('image-indicators');
+    const imageCounter = document.getElementById('image-counter');
+    const detailTitle = document.getElementById('detail-title');
+    const detailText = document.getElementById('detail-text');
+    const detailTags = document.getElementById('detail-tags');
+    const detailLike = document.getElementById('detail-like');
+    const detailCollect = document.getElementById('detail-collect');
+    const detailLikesCount = document.getElementById('detail-likes-count');
+    const detailCommentsCount = document.getElementById('detail-comments-count');
+    const detailCollectionsCount = document.getElementById('detail-collections-count');
+    
+    // 滑动相关变量
+    let isDragging = false;
+    let startX = 0;
+    let currentTranslate = 0;
+    let previousTranslate = 0;
+    let animationID = 0;
+    let currentIndex = 0;
+    let currentNoteId = 0;
+
+    // 初始化瀑布流
+    function initWaterfall() {
+      // 清空两列
+      column1.innerHTML = '';
+      column2.innerHTML = '';
+      
+      // 遍历笔记数据，添加到瀑布流
+      localNotes.forEach(note => {
+        const noteCard = createNoteCard(note);
+        addToColumn(noteCard);
+      });
+    }
+
+    // 创建笔记卡片
+    function createNoteCard(note) {
+      const card = document.createElement('div');
+      card.className = 'note-card card-hover';
+      card.dataset.id = note.id;
+      
+      // 检查是否有多张图片
+      const imgCount = note.imgUrls ? note.imgUrls.length : 0;
+      const mainImageUrl = imgCount > 0 ? note.imgUrls[0] : '';
+      
+      card.innerHTML = `
+        <div class="p-3">
+          <div class="flex items-center mb-2">
+            <img src="${note.avatar}" alt="${note.nickname}" class="w-6 h-6 rounded-full mr-2">
+            <span class="text-xs font-medium">${note.nickname}</span>
+          </div>
+          <div class="relative">
+            <img src="${mainImageUrl}" alt="${note.title}" class="note-image" onload="adjustWaterfall()">
+            ${imgCount > 1 ? `<div class="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-1 py-0.5 rounded">1/${imgCount}</div>` : ''}
+          </div>
+          <div class="mt-2">
+            <h3 class="text-sm font-medium line-clamp-2">${note.title}</h3>
+            <div class="flex items-center mt-2 text-xs text-gray-500">
+              <span class="flex items-center mr-3 like-btn" data-id="${note.id}">
+                <i class="fa fa-heart-o mr-1"></i> <span>${note.likes}</span>
+              </span>
+              <span class="flex items-center mr-3">
+                <i class="fa fa-comment-o mr-1"></i> <span>${note.comments}</span>
+              </span>
+              <span class="flex items-center collect-btn" data-id="${note.id}">
+                <i class="fa fa-star-o text-yellow-500 mr-1"></i> <span>${note.collections}</span>
+              </span>
+            </div>
+            <div class="mt-2">
+              ${note.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // 添加点击事件，打开详情页
+      card.addEventListener('click', (e) => {
+        // 检查是否点击了点赞或收藏按钮
+        if (e.target.closest('.like-btn') || e.target.closest('.collect-btn')) {
+          return;
+        }
+        openDetailPage(note.id);
+      });
+      
+      // 添加点赞事件
+      const likeBtn = card.querySelector('.like-btn');
+      likeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const noteId = parseInt(e.currentTarget.dataset.id);
+        toggleLike(noteId, likeBtn);
+      });
+      
+      // 添加收藏事件
+      const collectBtn = card.querySelector('.collect-btn');
+      collectBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const noteId = parseInt(e.currentTarget.dataset.id);
+        toggleCollect(noteId, collectBtn);
+      });
+      
+      return card;
+    }
+
+    // 添加卡片到较矮的列
+    function addToColumn(card) {
+      const height1 = column1.offsetHeight;
+      const height2 = column2.offsetHeight;
+      
+      if (height1 <= height2) {
+        column1.appendChild(card);
+      } else {
+        column2.appendChild(card);
+      }
+    }
+
+    // 调整瀑布流布局
+    function adjustWaterfall() {
+      // 获取所有卡片
+      const column1Cards = Array.from(column1.querySelectorAll('.note-card'));
+      const column2Cards = Array.from(column2.querySelectorAll('.note-card'));
+      
+      // 计算两列当前高度
+      let height1 = 0;
+      let height2 = 0;
+      
+      column1Cards.forEach(card => {
+        height1 += card.offsetHeight;
+      });
+      
+      column2Cards.forEach(card => {
+        height2 += card.offsetHeight;
+      });
+      
+      // 如果高度差超过100px，调整布局
+      if (Math.abs(height1 - height2) > 100) {
+        // 将较高列的最后一张卡片移动到较矮列
+        if (height1 > height2) {
+          const lastCard = column1.lastElementChild;
+          if (lastCard) {
+            column2.appendChild(lastCard);
+          }
+        } else {
+          const lastCard = column2.lastElementChild;
+          if (lastCard) {
+            column1.appendChild(lastCard);
+          }
+        }
+        
+        // 递归调整，直到高度差在合理范围内
+        adjustWaterfall();
+      }
+    }
+
+    // 初始化编辑面板
+    function initEditPanel() {
+      // 清空笔记列表
+      notesList.innerHTML = '';
+      
+      // 添加笔记缩略图
+      localNotes.forEach((note, index) => {
+        const thumbnail = document.createElement('div');
+        thumbnail.className = 'note-thumbnail';
+        thumbnail.dataset.index = index;
+        
+        const imgUrl = note.imgUrls && note.imgUrls.length > 0 ? note.imgUrls[0] : '';
+        
+        thumbnail.innerHTML = `
+          <div class="index">${index + 1}</div>
+          <img src="${imgUrl}" alt="${note.title}">
+        `;
+        
+        thumbnail.addEventListener('click', () => selectNote(index));
+        notesList.appendChild(thumbnail);
+      });
+      
+      // 隐藏表单，直到选择笔记
+      noteForm.style.display = 'none';
+    }
+
+    // 显示图片预览
+    function displayImagePreviews(images) {
+      imagePreviews.innerHTML = '';
+      
+      if (!images || images.length === 0) {
+        uploadInfo.textContent = '0/10 张图片';
+        uploadBtn.disabled = false;
+        uploadLimitWarning.classList.add('hidden');
+        return;
+      }
+      
+      // 显示图片
+      images.forEach((url, index) => {
+        const preview = document.createElement('div');
+        preview.className = 'image-preview';
+        preview.dataset.index = index;
+        
+        preview.innerHTML = `
+          <img src="${url}" alt="图片 ${index + 1}">
+          <div class="img-count">${index + 1}</div>
+          <div class="remove-img" onclick="removeImage(${index})">
+            <i class="fa fa-times"></i>
+          </div>
+        `;
+        
+        imagePreviews.appendChild(preview);
+      });
+      
+      // 更新上传信息
+      uploadInfo.textContent = `${images.length}/10 张图片`;
+      
+      // 检查是否达到上传上限
+      if (images.length >= 10) {
+        uploadBtn.disabled = true;
+        uploadLimitWarning.classList.remove('hidden');
+      } else {
+        uploadBtn.disabled = false;
+        uploadLimitWarning.classList.add('hidden');
+      }
+    }
+
+    // 移除图片
+    function removeImage(index) {
+      if (selectedNoteIndex === -1) return;
+      
+      const note = localNotes[selectedNoteIndex];
+      if (note.imgUrls && note.imgUrls.length > 0) {
+        // 移除图片
+        note.imgUrls.splice(index, 1);
+        // 更新预览
+        displayImagePreviews(note.imgUrls);
+      }
+    }
+
+    // 选择笔记进行编辑
+    function selectNote(index) {
+      // 更新选中索引
+      selectedNoteIndex = index;
+      
+      // 更新缩略图选中状态
+      const thumbnails = document.querySelectorAll('.note-thumbnail');
+      thumbnails.forEach(thumb => {
+        thumb.classList.remove('selected');
+      });
+      thumbnails[index].classList.add('selected');
+      
+      // 获取选中的笔记
+      const note = localNotes[index];
+      
+      // 填充表单数据
+      titleInput.value = note.title || '';
+      nicknameInput.value = note.nickname || '';
+      likesInput.value = note.likes || 0;
+      commentsInput.value = note.comments || 0;
+      collectionsInput.value = note.collections || 0;
+      contentInput.value = note.content || '';
+      
+      // 显示图片预览
+      displayImagePreviews(note.imgUrls || []);
+      
+      // 更新标签
+      updateTagsInput(note.tags || []);
+      
+      // 显示表单
+      noteForm.style.display = 'block';
+      
+      // 调整上移下移按钮状态
+      updateOrderButtons();
+    }
+
+    // 更新标签输入区
+    function updateTagsInput(tags) {
+      // 清空现有标签（保留输入框）
+      while (tagsInput.children.length > 1) {
+        tagsInput.removeChild(tagsInput.firstChild);
+      }
+      
+      // 添加标签
+      tags.forEach(tag => {
+        addTagToInput(tag);
+      });
+    }
+
+    // 添加标签到输入区
+    function addTagToInput(tagText) {
+      // 如果标签已存在，不添加
+      const existingTags = Array.from(tagsInput.querySelectorAll('.tag-item'));
+      if (existingTags.some(tag => tag.dataset.text === tagText)) {
+        return;
+      }
+      
+      const tagItem = document.createElement('div');
+      tagItem.className = 'tag-item';
+      tagItem.dataset.text = tagText;
+      
+      tagItem.innerHTML = `
+        ${tagText}
+        <span class="remove-tag" onclick="removeTag(this)">
+          <i class="fa fa-times"></i>
+        </span>
+      `;
+      
+      // 插入到输入框前面
+      tagsInput.insertBefore(tagItem, tagInput);
+    }
+
+    // 移除标签
+    function removeTag(element) {
+      const tagItem = element.parentElement;
+      tagsInput.removeChild(tagItem);
+    }
+
+    // 更新上移下移按钮状态
+    function updateOrderButtons() {
+      if (selectedNoteIndex === 0) {
+        moveUpBtn.disabled = true;
+        moveUpBtn.classList.add('opacity-50');
+      } else {
+        moveUpBtn.disabled = false;
+        moveUpBtn.classList.remove('opacity-50');
+      }
+      
+      if (selectedNoteIndex === localNotes.length - 1) {
+        moveDownBtn.disabled = true;
+        moveDownBtn.classList.add('opacity-50');
+      } else {
+        moveDownBtn.disabled = false;
+        moveDownBtn.classList.remove('opacity-50');
+      }
+    }
+
+    // 移动笔记顺序
+    function moveNote(direction) {
+      if (selectedNoteIndex === -1) return;
+      
+      const newIndex = direction === 'up' ? selectedNoteIndex - 1 : selectedNoteIndex + 1;
+      
+      // 检查边界
+      if (newIndex < 0 || newIndex >= localNotes.length) return;
+      
+      // 交换笔记
+      [localNotes[selectedNoteIndex], localNotes[newIndex]] = [localNotes[newIndex], localNotes[selectedNoteIndex]];
+      
+      // 更新选中索引
+      selectedNoteIndex = newIndex;
+      
+      // 重新初始化编辑面板
+      initEditPanel();
+      
+      // 重新选中移动后的笔记
+      setTimeout(() => {
+        const thumbnails = document.querySelectorAll('.note-thumbnail');
+        if (thumbnails[selectedNoteIndex]) {
+          thumbnails[selectedNoteIndex].click();
+        }
+      }, 0);
+    }
+
+    // 保存编辑
+    function saveEdit() {
+      if (selectedNoteIndex === -1) return;
+      
+      // 获取表单数据
+      const title = titleInput.value.trim();
+      const nickname = nicknameInput.value.trim();
+      const likes = parseInt(likesInput.value) || 0;
+      const comments = parseInt(commentsInput.value) || 0;
+      const collections = parseInt(collectionsInput.value) || 0;
+      const content = contentInput.value.trim();
+      
+      // 获取标签
+      const tags = Array.from(tagsInput.querySelectorAll('.tag-item'))
+        .map(tag => tag.dataset.text);
+      
+      // 获取图片URLs（从预览中提取）
+      const imgUrls = [];
+      const previewImages = imagePreviews.querySelectorAll('img[src]');
+      previewImages.forEach(img => {
+        if (img.src && img.src !== window.location.href) {
+          imgUrls.push(img.src);
+        }
+      });
+      
+      // 更新笔记数据
+      localNotes[selectedNoteIndex] = {
+        ...localNotes[selectedNoteIndex],
+        title,
+        nickname,
+        likes,
+        comments,
+        collections,
+        content,
+        tags,
+        imgUrls
+      };
+      
+      // 保存到localStorage
+      saveNotesData();
+      
+      // 更新瀑布流
+      initWaterfall();
+      
+      // 关闭编辑面板
+      closeEditPanel();
+    }
+
+    // 关闭编辑面板
+    function closeEditPanel() {
+      editPanel.style.display = 'none';
+      selectedNoteIndex = -1;
+    }
+
+    // 处理图片上传
+    function handleImageUpload(event) {
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
+      
+      const note = localNotes[selectedNoteIndex];
+      if (!note) return;
+      
+      // 确保imgUrls数组存在
+      if (!note.imgUrls) {
+        note.imgUrls = [];
+      }
+      
+      // 计算还能上传多少张图片
+      const remaining = 10 - note.imgUrls.length;
+      if (remaining <= 0) {
+        uploadLimitWarning.classList.remove('hidden');
+        return;
+      }
+      
+      // 只处理能上传的数量
+      const uploadCount = Math.min(files.length, remaining);
+      
+      // 处理每张图片
+      for (let i = 0; i < uploadCount; i++) {
+        const file = files[i];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+          // 添加到图片数组
+          note.imgUrls.push(e.target.result);
+          // 更新预览
+          displayImagePreviews(note.imgUrls);
+        };
+        
+        reader.readAsDataURL(file);
+      }
+      
+      // 清空文件输入，允许重复选择同一文件
+      imageUpload.value = '';
+    }
+
+    // 打开详情页
+    function openDetailPage(noteId) {
+      const note = localNotes.find(n => n.id === noteId);
+      if (!note) return;
+      
+      // 保存当前笔记ID
+      currentNoteId = noteId;
+      currentIndex = 0;
+      
+      // 填充详情页数据
+      detailAvatar.src = note.avatar;
+      detailNickname.textContent = note.nickname;
+      detailTitle.textContent = note.title;
+      detailText.textContent = note.content || '';
+      detailLikesCount.textContent = note.likes;
+      detailCommentsCount.textContent = note.comments;
+      detailCollectionsCount.textContent = note.collections;
+      
+      // 重置点赞和收藏按钮状态
+      detailLike.classList.remove('active');
+      detailLike.querySelector('i').className = 'fa fa-heart-o text-xl mr-1';
+      detailCollect.classList.remove('active');
+      detailCollect.querySelector('i').className = 'fa fa-star-o text-xl mr-1';
+      
+      // 填充标签
+      detailTags.innerHTML = '';
+      if (note.tags && note.tags.length > 0) {
+        note.tags.forEach(tag => {
+          const tagEl = document.createElement('span');
+          tagEl.className = 'tag';
+          tagEl.textContent = tag;
+          detailTags.appendChild(tagEl);
+        });
+      }
+      
+      // 填充图片
+      imageTrack.innerHTML = '';
+      imageIndicators.innerHTML = '';
+      imageCounter.textContent = '1/1';
+      
+      const imgCount = note.imgUrls ? note.imgUrls.length : 0;
+      
+      if (imgCount > 0) {
+        // 更新计数器
+        imageCounter.textContent = `1/${imgCount}`;
+        
+        // 处理指示器显示
+        if (imgCount <= 5) {
+          // 5张及以下显示圆点指示器
+          imageIndicators.style.display = 'flex';
+          imageCounter.style.display = 'none';
+        } else {
+          // 超过5张显示数字计数器
+          imageIndicators.style.display = 'none';
+          imageCounter.style.display = 'block';
+        }
+        
+        // 添加图片和指示器
+        note.imgUrls.forEach((url, index) => {
+          // 添加图片
+          const img = document.createElement('img');
+          img.src = url;
+          img.alt = `${note.title} - 图片${index + 1}`;
+          imageTrack.appendChild(img);
+          
+          // 添加指示器（仅5张及以下）
+          if (imgCount <= 5) {
+            const dot = document.createElement('div');
+            dot.className = `indicator-dot ${index === 0 ? 'active' : ''}`;
+            dot.dataset.index = index;
+            dot.addEventListener('click', () => {
+              currentIndex = index;
+              updateSliderPosition();
+            });
+            imageIndicators.appendChild(dot);
+          }
+        });
+      }
+      
+      // 显示详情页
+      detailModal.style.display = 'block';
+      
+      // 阻止页面滚动
+      document.body.style.overflow = 'hidden';
+    }
+
+    // 关闭详情页
+    function closeDetailPage() {
+      detailModal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    // 更新滑块位置
+    function updateSliderPosition() {
+      const imageWidth = imageTrack.offsetWidth;
+      const imgCount = imageTrack.children.length;
+      
+      currentTranslate = -currentIndex * imageWidth;
+      setSliderPosition();
+      
+      // 更新指示器或计数器
+      if (imgCount <= 5) {
+        // 更新圆点指示器
+        const dots = imageIndicators.querySelectorAll('.indicator-dot');
+        dots.forEach((dot, index) => {
+          if (index === currentIndex) {
+            dot.classList.add('active');
+          } else {
+            dot.classList.remove('active');
+          }
+        });
+      } else {
+        // 更新数字计数器
+        imageCounter.textContent = `${currentIndex + 1}/${imgCount}`;
+      }
+    }
+
+    // 设置滑块位置
+    function setSliderPosition() {
+      imageTrack.style.transform = `translateX(${currentTranslate}px)`;
+    }
+
+    // 滑动开始
+    function startDrag(e) {
+      isDragging = true;
+      startX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+      animationID = requestAnimationFrame(animation);
+      imageTrack.style.transition = 'none';
+    }
+
+    // 滑动中
+    function drag(e) {
+      if (!isDragging) return;
+      const currentX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+      currentTranslate = previousTranslate + currentX - startX;
+      
+      // 边缘弹性效果
+      const imageWidth = imageTrack.offsetWidth;
+      const imagesCount = imageTrack.children.length;
+      
+      if (currentIndex === 0 && currentTranslate > 0) {
+        // 第一页向右滑动，添加弹性效果
+        currentTranslate = currentTranslate / 3;
+      } else if (currentIndex === imagesCount - 1 && currentTranslate < -imageWidth * (imagesCount - 1)) {
+        // 最后一页向左滑动，添加弹性效果
+        const overTranslate = currentTranslate + imageWidth * (imagesCount - 1);
+        currentTranslate = -imageWidth * (imagesCount - 1) + overTranslate / 3;
+      }
+      
+      setSliderPosition();
+    }
+
+    // 滑动结束
+    function endDrag(e) {
+      cancelAnimationFrame(animationID);
+      isDragging = false;
+      imageTrack.style.transition = 'transform 0.3s ease-out';
+      
+      const imageWidth = imageTrack.offsetWidth;
+      const imagesCount = imageTrack.children.length;
+      
+      // 如果没有图片，不处理
+      if (imagesCount === 0) return;
+      
+      // 计算滑动距离
+      const movedBy = currentTranslate - previousTranslate;
+      
+      // 如果滑动距离超过屏幕的1/3，切换图片
+      if (movedBy < -imageWidth / 3 && currentIndex < imagesCount - 1) {
+        currentIndex += 1;
+      } else if (movedBy > imageWidth / 3 && currentIndex > 0) {
+        currentIndex -= 1;
+      }
+      
+      // 更新位置
+      updateSliderPosition();
+      previousTranslate = currentTranslate;
+    }
+
+    // 动画函数
+    function animation() {
+      if (isDragging) {
+        requestAnimationFrame(animation);
+      }
+    }
+
+    // 切换点赞状态
+    function toggleLike(noteId, element) {
+      const note = localNotes.find(n => n.id === noteId);
+      if (!note) return;
+      
+      // 检查是否已经点赞
+      const isLiked = element.classList.contains('active');
+      
+      if (isLiked) {
+        // 取消点赞
+        note.likes = Math.max(0, note.likes - 1);
+        element.classList.remove('active');
+        element.querySelector('i').className = 'fa fa-heart-o mr-1';
+      } else {
+        // 点赞
+        note.likes += 1;
+        element.classList.add('active');
+        element.querySelector('i').className = 'fa fa-heart text-primary mr-1';
+        element.querySelector('i').classList.add('scale-animation');
+        setTimeout(() => {
+          element.querySelector('i').classList.remove('scale-animation');
+        }, 200);
+      }
+      
+      // 更新显示的数字
+      element.querySelector('span').textContent = note.likes;
+      
+      // 如果详情页打开且是当前笔记，同步更新
+      if (detailModal.style.display === 'block' && currentNoteId === noteId) {
+        detailLikesCount.textContent = note.likes;
+        detailLike.classList.toggle('active', !isLiked);
+        detailLike.querySelector('i').className = isLiked ? 
+          'fa fa-heart-o text-xl mr-1' : 
+          'fa fa-heart text-primary text-xl mr-1';
+      }
+      
+      // 保存到localStorage
+      saveNotesData();
+    }
+
+    // 切换收藏状态
+    function toggleCollect(noteId, element) {
+      const note = localNotes.find(n => n.id === noteId);
+      if (!note) return;
+      
+      // 检查是否已经收藏
+      const isCollected = element.classList.contains('active');
+      
+      if (isCollected) {
+        // 取消收藏
+        note.collections = Math.max(0, note.collections - 1);
+        element.classList.remove('active');
+        element.querySelector('i').className = 'fa fa-star-o text-yellow-500 mr-1';
+      } else {
+        // 收藏
+        note.collections += 1;
+        element.classList.add('active');
+        element.querySelector('i').className = 'fa fa-star text-yellow-500 mr-1';
+        element.querySelector('i').classList.add('scale-animation');
+        setTimeout(() => {
+          element.querySelector('i').classList.remove('scale-animation');
+        }, 200);
+      }
+      
+      // 更新显示的数字
+      element.querySelector('span').textContent = note.collections;
+      
+      // 如果详情页打开且是当前笔记，同步更新
+      if (detailModal.style.display === 'block' && currentNoteId === noteId) {
+        detailCollectionsCount.textContent = note.collections;
+        detailCollect.classList.toggle('active', !isCollected);
+        detailCollect.querySelector('i').className = isCollected ? 
+          'fa fa-star-o text-xl mr-1' : 
+          'fa fa-star text-yellow-500 text-xl mr-1';
+      }
+      
+      // 保存到localStorage
+      saveNotesData();
+    }
+
+    // 事件监听
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const value = searchInput.value.trim();
+        // 隐藏式编辑入口，输入特定密码"editmode"并回车
+        if (value === 'editmode') {
+          editPanel.style.display = 'block';
+          initEditPanel();
+        }
+        // 清空搜索框
+        searchInput.value = '';
+      }
+    });
+    
+    closePanel.addEventListener('click', closeEditPanel);
+    moveUpBtn.addEventListener('click', () => moveNote('up'));
+    moveDownBtn.addEventListener('click', () => moveNote('down'));
+    saveEditBtn.addEventListener('click', saveEdit);
+    imageUpload.addEventListener('change', handleImageUpload);
+    
+    // 标签输入事件
+    tagInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && tagInput.value.trim()) {
+        e.preventDefault();
+        const tagText = '#' + tagInput.value.trim().replace(/^#/, '');
+        addTagToInput(tagText);
+        tagInput.value = '';
+      }
+    });
+
+    // 点击遮罩关闭编辑面板
+    editPanel.addEventListener('click', (e) => {
+      if (e.target === editPanel) {
+        closeEditPanel();
+      }
+    });
+
+    // 详情页事件
+    closeDetail.addEventListener('click', closeDetailPage);
+    
+    // 详情页点赞事件
+    detailLike.addEventListener('click', () => {
+      toggleLike(currentNoteId, detailLike);
+      // 更新卡片上的点赞数
+      const cardLikeBtn = document.querySelector(`.like-btn[data-id="${currentNoteId}"]`);
+      if (cardLikeBtn) {
+        const note = localNotes.find(n => n.id === currentNoteId);
+        cardLikeBtn.querySelector('span').textContent = note.likes;
+        cardLikeBtn.classList.toggle('active', detailLike.classList.contains('active'));
+        cardLikeBtn.querySelector('i').className = detailLike.classList.contains('active') ? 
+          'fa fa-heart text-primary mr-1' : 
+          'fa fa-heart-o mr-1';
+      }
+    });
+    
+    // 详情页收藏事件
+    detailCollect.addEventListener('click', () => {
+      toggleCollect(currentNoteId, detailCollect);
+      // 更新卡片上的收藏数
+      const cardCollectBtn = document.querySelector(`.collect-btn[data-id="${currentNoteId}"]`);
+      if (cardCollectBtn) {
+        const note = localNotes.find(n => n.id === currentNoteId);
+        cardCollectBtn.querySelector('span').textContent = note.collections;
+        cardCollectBtn.classList.toggle('active', detailCollect.classList.contains('active'));
+        cardCollectBtn.querySelector('i').className = detailCollect.classList.contains('active') ? 
+          'fa fa-star text-yellow-500 mr-1' : 
+          'fa fa-star-o text-yellow-500 mr-1';
+      }
+    });
+    
+    // 滑动事件监听
+    imageTrack.addEventListener('mousedown', startDrag);
+    imageTrack.addEventListener('touchstart', startDrag);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('touchmove', drag);
+    document.addEventListener('mouseup', endDrag);
+    document.addEventListener('touchend', endDrag);
+    document.addEventListener('mouseleave', endDrag);
+
+    // 页面加载完成后初始化
+    window.addEventListener('load', () => {
+      // 加载数据
+      loadNotesData();
+      // 初始化瀑布流
+      initWaterfall();
+    });
+
+    // 窗口大小改变时调整瀑布流
+    window.addEventListener('resize', adjustWaterfall);
+  </script>
+</body>
+</html>
